@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import "dayjs/locale/pt-br"
+import "dayjs/locale/pt-br";
 import relativeTime from "dayjs/plugin/relativeTime";
 
 import {
@@ -17,36 +17,52 @@ import { Table } from "./table/table";
 import { TableHeader } from "./table/table-header";
 import { TableCell } from "./table/table-cell";
 import { TableRow } from "./table/table-row";
-import { useState } from "react";
-import { attendees } from "../data/attendees";
+import { useEffect, useState } from "react";
 
 dayjs.extend(relativeTime);
 dayjs.locale("pt-br");
 
+interface Attendee {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+  checkedInAt: string | null;
+}
+
 export function AttendeeList() {
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [attendees, setAttendees] = useState<Attendee[]>([]);
 
   const totalPages = Math.ceil(attendees.length / 10);
 
+  useEffect(() => {
+    fetch(
+      "http://localhost:3333/events/9e9bd979-9d10-4915-b339-3786b1634f33/attendees"
+    )
+      .then((response) => response.json())
+      .then((data) => setAttendees(data.attendees));
+  }, [page]);
+
   function onSearchInputChange(event: React.ChangeEvent<HTMLInputElement>) {
-    setSearch(event.target.value)
+    setSearch(event.target.value);
   }
 
   function goToFirstPage() {
-    setPage(1)
+    setPage(1);
   }
 
   function goToNextPage() {
-    setPage(page + 1)
+    setPage(page + 1);
   }
 
   function goToPreviousPage() {
-    setPage(page - 1)
+    setPage(page - 1);
   }
 
   function goToLastPage() {
-    setPage(totalPages)
+    setPage(totalPages);
   }
 
   return (
@@ -81,13 +97,13 @@ export function AttendeeList() {
           </tr>
         </thead>
         <tbody>
-          {attendees.slice((page - 1) * 10, page * 10).map((attendee) => {
+          {attendees.map((attendee) => {
             return (
-              <TableRow key={attendee.id} className="border-b border-white/10 hover:bg-white/5">
+              <TableRow key={attendee.id}>
                 <TableCell>
                   <input
                     type="checkbox"
-                    className="size-4 bg-black/20 rounded border-white/10"
+                    className="size-4 bg-black/20 rounded border-white/10 accent-orange-400"
                   />
                 </TableCell>
                 <TableCell>{attendee.id}</TableCell>
@@ -100,7 +116,13 @@ export function AttendeeList() {
                   </div>
                 </TableCell>
                 <TableCell>{dayjs().to(attendee.createdAt)}</TableCell>
-                <TableCell>{dayjs().to(attendee.checkInAt)}</TableCell>
+                <TableCell>
+                  {attendee.checkedInAt === null ? (
+                    <span className="text-zinc-500">Não fez check-in!</span>
+                  ) : (
+                    dayjs().to(attendee.checkedInAt)
+                  )}
+                </TableCell>
                 <TableCell>
                   <IconButton transparent>
                     <MoreHorizontal className="size-4" />
@@ -112,17 +134,14 @@ export function AttendeeList() {
         </tbody>
         <tfoot>
           <tr>
-            <TableCell
-              colSpan={3}
-            >
+            <TableCell colSpan={3}>
               A mostrar 10 de {attendees.length} itens
             </TableCell>
-            <TableCell
-              className="text-right"
-              colSpan={3}
-            >
+            <TableCell className="text-right" colSpan={3}>
               <div className="inline-flex items-center gap-8">
-                <span>Página {page} de {totalPages}</span>
+                <span>
+                  Página {page} de {totalPages}
+                </span>
                 <div className="flex gap-1.5">
                   <IconButton onClick={goToFirstPage} disabled={page === 1}>
                     <ChevronsLeft className="size-4" />
@@ -130,10 +149,16 @@ export function AttendeeList() {
                   <IconButton onClick={goToPreviousPage} disabled={page === 1}>
                     <ChevronLeft className="size-4" />
                   </IconButton>
-                  <IconButton onClick={goToNextPage} disabled={page === totalPages}>
+                  <IconButton
+                    onClick={goToNextPage}
+                    disabled={page === totalPages}
+                  >
                     <ChevronRight className="size-4" />
                   </IconButton>
-                  <IconButton onClick={goToLastPage} disabled={page === totalPages}>
+                  <IconButton
+                    onClick={goToLastPage}
+                    disabled={page === totalPages}
+                  >
                     <ChevronsRight className="size-4" />
                   </IconButton>
                 </div>
